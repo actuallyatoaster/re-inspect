@@ -119,11 +119,10 @@ if __name__ == "__main__":
 	MSS = 100
 	LOSS_CW = 128
 	dst_ip = socket.gethostbyname(url)
-	site_size, site_obj = get_largest_obj("http://"+url, dst_ip, 100)
-	if site_obj.find("http://")!=-1:
-		print("only support HTTPs now")
+	
+	site_obj = "http://www.files.com/"
 
-	site_obj = site_obj[8:]
+	site_obj = site_obj[7:]
 	if site_obj.find("/") != -1:
 		# exist large ojb
 		str_list = site_obj.split('/', 1)
@@ -133,7 +132,7 @@ if __name__ == "__main__":
 		site_url = site_obj
 		req_obj = '/'
 
-	dst_port = 443
+	dst_port = 80
 	dst_name = url
 
 	ua_string = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
@@ -144,9 +143,13 @@ if __name__ == "__main__":
 		try:
 			ETH_P_ALL = 3
 			ETH_P_IP = 0x800
+			print("here")
 			s = socket.socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
+			print("here2")
 			s.bind((interface, 0))
+			print("here3")
 			s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 12582912)
+			
 			tcp_obj = TcpHandshake([dst_ip,dst_port], MSS)
 			res_pkt = tcp_obj.send_syn1()
 			tcp_obj.pkt[TCP].options = []
@@ -165,23 +168,6 @@ if __name__ == "__main__":
 					LOSS_CW, 0, src_ip])
 
 				f.close()
-
-				# worker(dst_ip, dst_port, tcp_obj, s, dst_name, req_obj)
-				tls_version = TLSVersion.TLS_1_2
-				ciphers = [TLSCipherSuite.RSA_WITH_AES_128_CBC_SHA,
-				TLSCipherSuite.RSA_WITH_RC4_128_SHA,
-				   TLSCipherSuite.ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,
-				   TLSCipherSuite.ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
-				   TLSCipherSuite.ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
-				   TLSCipherSuite.ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
-				   TLSCipherSuite.RSA_WITH_AES_256_CBC_SHA256,
-				   TLSCipherSuite.RSA_WITH_AES_128_CBC_SHA256,
-				   TLSCipherSuite.RSA_WITH_AES_256_CBC_SHA,
-				   TLSCipherSuite.RSA_WITH_AES_128_CBC_SHA]
-
-				extensions = [TLSExtension() / TLSExtECPointsFormat(),
-				  TLSExtension() / TLSExtSupportedGroups(),
-				  ]
 
 				try:
 					target_ip_port = (dst_ip,dst_port)
@@ -205,20 +191,6 @@ if __name__ == "__main__":
 								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\nUser-Agent: %s\r\n\r\n"%(req_obj, dst_name, ua_string)))
 								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\nUser-Agent: %s\r\n\r\n"%(req_obj, dst_name, ua_string)))
 								resp = tls_socket.do_round_trip(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\nUser-Agent: %s\r\n\r\n"%(req_obj, dst_name, ua_string)))
-							else:
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								tls_socket.do_round_trip_without_recv(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
-								resp = tls_socket.do_round_trip(TLSPlaintext(data="GET %s HTTP/1.1\r\nHOST: %s\r\n\r\n"%(req_obj, dst_name)))
 							print("*** Successfully got reponse from server ***")
 
 
