@@ -10,7 +10,7 @@ import select
 import time
 import random
 import http as HTTP
-from Queue import Queue
+from queue import Queue
 import threading
 import csv
 import string
@@ -20,8 +20,8 @@ from bs4 import BeautifulSoup
 import requests
 import socket
 from scapy.all import *
-from scapy_ssl_tls.ssl_tls import *
-from sklearn.externals import joblib
+#from scapy_ssl_tls.ssl_tls import *
+#from sklearn.externals import joblib
 
 class TcpHandshake(object):
 	def __init__(self, target, mss):
@@ -39,7 +39,7 @@ class TcpHandshake(object):
 		self.pkt[TCP].flags = "S"
 		try:
 			res_pkt = sr1(self.pkt, timeout=5)
-		except Exception, e:
+		except Exception as e:
 			return None
 		return res_pkt
 
@@ -222,7 +222,7 @@ if __name__ == "__main__":
 							print("*** Successfully got reponse from server ***")
 
 
-				except Exception, e:
+				except Exception as e:
 					print('Server response exception:', e)
 					exc_type, exc_obj, exc_tb = sys.exc_info()
 					fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -250,7 +250,7 @@ if __name__ == "__main__":
 
 			s.close()
 
-		except Exception,e:
+		except Exception as e:
 			print('e_getting_trace:', e)
 
 	model = joblib.load('tree')
