@@ -23,6 +23,9 @@ from scapy.all import *
 #from scapy_ssl_tls.ssl_tls import *
 #from sklearn.externals import joblib
 
+import batch_acks
+import multiprocessing as mp
+
 class TcpHandshake(object):
 	def __init__(self, target, mss):
 		self.seq = random.randrange(100000,99999999)
@@ -119,7 +122,8 @@ if __name__ == "__main__":
 	MSS = 100
 	LOSS_CW = 128
 
-	url='http.badssl.com'
+	# url='http.badssl.com'
+	url='www.thomas-bayer.com'
 	dst_ip = socket.gethostbyname(url)
 	site_obj = f"http://{url}/"
 
@@ -149,8 +153,11 @@ if __name__ == "__main__":
 	send(request)
 	#print(reply.summary())
 
-	packets = sniff(timeout=0.6, prn=lambda x: print(bytes(x[TCP].payload)),filter=f"src host {syn_ack[IP].src}")
-	packets.summary()
+	pkt_q = mp.Queue()
+	batch_proc = mp.Process(target=batch_acks.q_listen, args=(pkt_q, RTT))
+	batch_proc.start()
+	packets = sniff(prn=lambda pkt: pkt_q.put_nowait(pkt),filter=f"src host {syn_ack[IP].src}")
+	batch_proc.join()
 
 
 	# ua_string = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
