@@ -118,7 +118,7 @@ if __name__ == "__main__":
 	# 	curr_dir += '/'
 
 
-	RTT = 0.8
+	RTT = 0.6
 	MSS = 100
 	LOSS_CW = 128
 
