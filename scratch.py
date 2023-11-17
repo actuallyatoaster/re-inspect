@@ -118,8 +118,8 @@ if __name__ == "__main__":
 	# 	curr_dir += '/'
 
 
-	RTT = 0.6
-	MSS = 100
+	RTT = 0.7
+	MSS = 200
 	LOSS_CW = 128
 
 	# url='http.badssl.com'
