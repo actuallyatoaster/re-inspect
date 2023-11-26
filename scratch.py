@@ -151,12 +151,12 @@ if __name__ == "__main__":
 	getStr = f'GET {req_obj} HTTP/1.1\r\nHost: {url}\r\nConnection: Close\r\n\r\n'
 	request = IP(dst=f'{url}') / TCP(dport=80, sport=syn_ack[TCP].dport,
 				seq=syn_ack[TCP].ack, ack=syn_ack[TCP].seq + 1, flags='A') / getStr
-	send(request)
-	#print(reply.summary())
+	
 
 	pkt_q = mp.Queue()
-	batch_proc = mp.Process(target=batch_acks.q_listen, args=(pkt_q, RTT))
+	batch_proc = mp.Process(target=batch_acks.q_listen, args=(pkt_q, RTT, request))
 	batch_proc.start()
+
 	packets = sniff(prn=lambda pkt: pkt_q.put_nowait(pkt),filter=f"src host {syn_ack[IP].src}")
 	batch_proc.join()
 

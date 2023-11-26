@@ -6,13 +6,15 @@ import queue
 # TODO:
 # Measure RTT?
 # Try to make the vector
+# Plot graphs for each algorithm
+# try running tcpprob/ftrace on azure machine
 
 # DONE:
 # Batch acks-
 # Sequence check
 
 DROP_TURN = 14
-INFLATE_TURN = 21
+
 STOP_TURN = 30
 INFLATE_BY = 0.05
 LOSS_CW = 128
@@ -26,12 +28,17 @@ def make_ack_for_pkt(pkt, max_ack):
                  seq=pkt[TCP].ack, ack=max_ack, flags='A')
     return (ack_pkt, max_ack)
 
-def q_listen(pkt_q, rtt):
+def q_listen(pkt_q, rtt, request_pkt):
+    time.sleep(rtt)
+    send(request_pkt)
+
     max_seq_seen = 0
     cwnds = [1, 1]
     turn = 0
     max_ack = 0
     has_dropped = False
+    INFLATE_TURN = 100000000
+    STOP_TURN = 100000000
 
     while turn < STOP_TURN:
         time.sleep(rtt)
@@ -101,6 +108,8 @@ def q_listen(pkt_q, rtt):
             acks = []
             max_ack = max_ack_turn_start
             has_dropped = True
+            INFLATE_TURN = turn + 7
+            STOP_TURN = INFLATE_TURN + 7
 
         # Window Emptying
         if len(acks) > 0: send(acks) 
@@ -109,6 +118,6 @@ def q_listen(pkt_q, rtt):
         print("This window: ", this_cwnd, this_cwnd_test, max_ack, turn)
         cwnds.append(this_cwnd)
         turn += 1
-    print(cwnds)
+    print(",".join([str(i) for i in cwnds]))
 
 
