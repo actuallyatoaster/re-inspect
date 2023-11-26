@@ -3,16 +3,57 @@ import multiprocessing as mp
 from scapy.all import IP, TCP, send
 import queue
 
+
+def extract(cw):
+	loss_cw = 0
+	loss_rtt = 0
+	sst = 0
+	sst_rtt = 0
+
+	if len(cw) < 15:
+		return None
+	index = 3
+	while (cw[index] != 1):
+		index =index + 1
+	loss_rtt = index-1
+	if cw[loss_rtt-1] > 128:
+		loss_cw = cw[index-1]+cw[index-2]-128
+	else:
+		loss_cw = cw[index-1]
+
+	index = index + 1
+	while (cw[index+1] > 1.9 * cw[index] and cw[index+1] < 2.1*cw[index]):
+		index = index + 1
+	sst = cw[index+1]
+	sst_rtt = index + 1
+
+	return [sst/(loss_cw+0.0),
+			cw[loss_rtt+2]-cw[loss_rtt+1], cw[loss_rtt+3]-cw[loss_rtt+1], cw[loss_rtt+4]-cw[loss_rtt+1],
+			cw[sst_rtt+1]- cw[sst_rtt], cw[sst_rtt+3]- cw[sst_rtt], cw[sst_rtt+5]- cw[sst_rtt], cw[sst_rtt+7]- cw[sst_rtt]]
+
+def my_extract(drop_turn, inflate_turn, cwnds):
+    print(drop_turn, inflate_turn)
+    phase1_init_cwnd = cwnds[0]
+    phase2_init_cwnd = cwnds[drop_turn + 3]
+    phase3_init_cwnd = cwnds[inflate_turn +3]
+
+    p1_offsets = [i - phase1_init_cwnd for i in cwnds[0:drop_turn + 3]]
+    print(p1_offsets)
+    p2_offsets = [i-phase2_init_cwnd for i in cwnds[drop_turn + 3: inflate_turn + 3]]
+    print(p2_offsets)
+    p3_offsets = [i-phase3_init_cwnd for i in cwnds[inflate_turn+3:]]
+    print(p3_offsets)
+    return (sum(p1_offsets), sum(p2_offsets), sum(p3_offsets))
+
 # TODO:
 # Measure RTT?
 # Try to make the vector
 # Plot graphs for each algorithm
 # try running tcpprob/ftrace on azure machine
 
-# DONE:
-# Batch acks-
-# Sequence check
-
+# Issues
+# bbr - we reach steady state ~15 packets/RTT way before reaching LOSS_CW
+# vegas staeady state ~60
 DROP_TURN = 14
 
 STOP_TURN = 30
@@ -115,9 +156,11 @@ def q_listen(pkt_q, rtt, request_pkt):
         if len(acks) > 0: send(acks) 
 
         if turn >= INFLATE_TURN: rtt += INFLATE_BY
-        print("This window: ", this_cwnd, this_cwnd_test, max_ack, turn)
+        print("This window: ", this_cwnd, turn, INFLATE_TURN, STOP_TURN)
         cwnds.append(this_cwnd)
         turn += 1
     print(",".join([str(i) for i in cwnds]))
+    print(my_extract(INFLATE_TURN - 7, INFLATE_TURN, cwnds))
+    print(extract(cwnds))
 
 
