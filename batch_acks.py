@@ -2,34 +2,40 @@ import time
 import multiprocessing as mp
 from scapy.all import IP, TCP, send
 import queue
+import os
+import signal
 
 
-def extract(cw):
-	loss_cw = 0
-	loss_rtt = 0
-	sst = 0
-	sst_rtt = 0
+def extract(cw, loss_turn, inflate_turn):
 
-	if len(cw) < 15:
-		return None
-	index = 3
-	while (cw[index] != 1):
-		index =index + 1
-	loss_rtt = index-1
-	if cw[loss_rtt-1] > 128:
-		loss_cw = cw[index-1]+cw[index-2]-128
-	else:
-		loss_cw = cw[index-1]
 
-	index = index + 1
-	while (cw[index+1] > 1.9 * cw[index] and cw[index+1] < 2.1*cw[index]):
-		index = index + 1
-	sst = cw[index+1]
-	sst_rtt = index + 1
+    # if len(cw) < 15:
+    # 	return None
+    # index = 3
+    # while (cw[index] != 1):
+    # 	index =index + 1
+    # loss_rtt = index-1
+    # if cw[loss_rtt-1] > 128:
+    # 	loss_cw = cw[index-1]+cw[index-2]-128
+    # else:
+    # 	loss_cw = cw[index-1]
 
-	return [sst/(loss_cw+0.0),
-			cw[loss_rtt+2]-cw[loss_rtt+1], cw[loss_rtt+3]-cw[loss_rtt+1], cw[loss_rtt+4]-cw[loss_rtt+1],
-			cw[sst_rtt+1]- cw[sst_rtt], cw[sst_rtt+3]- cw[sst_rtt], cw[sst_rtt+5]- cw[sst_rtt], cw[sst_rtt+7]- cw[sst_rtt]]
+    # index = index + 1
+    # while (cw[index+1] > 1.9 * cw[index] and cw[index+1] < 2.1*cw[index]):
+    # 	index = index + 1
+    # sst = cw[index+1]
+    # sst_rtt = index + 1
+
+    loss_rtt = loss_turn
+    loss_cw = cw[loss_turn]
+
+    sst_rtt = inflate_turn
+    sst = cw[inflate_turn]
+
+
+    return [sst/(loss_cw+0.0),
+            cw[loss_rtt+2]-cw[loss_rtt+1], cw[loss_rtt+3]-cw[loss_rtt+1], cw[loss_rtt+4]-cw[loss_rtt+1],
+            cw[sst_rtt+1]- cw[sst_rtt], cw[sst_rtt+3]- cw[sst_rtt], cw[sst_rtt+5]- cw[sst_rtt], cw[sst_rtt+7]- cw[sst_rtt]]
 
 def my_extract(drop_turn, inflate_turn, cwnds):
     print(drop_turn, inflate_turn)
@@ -78,6 +84,7 @@ def q_listen(pkt_q, rtt, request_pkt):
     turn = 0
     max_ack = 0
     has_dropped = False
+    LATEST_DROP = 21
     INFLATE_TURN = 100000000
     STOP_TURN = 100000000
 
@@ -122,18 +129,14 @@ def q_listen(pkt_q, rtt, request_pkt):
                 send(acks)
                 return
             #print("seq", pkt[TCP].seq)
-            (ack, max_ack) = make_ack_for_pkt(pkt, max_ack)
-
-            # if dropped_ack is not None:
-            #     if pkt[TCP].seq + len(bytes(pkt[TCP].payload))+ 1 == dropped_ack:
-            #         dropped_ack = None
-            #     else:
-            #         ack[TCP].ack = dropped_ack
-
-            if ack is not None: acks.append(ack)
+            pkt = make_ack_for_pkt(pkt, max_ack)
+        
+            if pkt is not None:
+                (ack, max_ack) = pkt
+                acks.append(ack)
 
         # Drop some packet
-        if this_cwnd >= LOSS_CW and not has_dropped:
+        if (this_cwnd >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
             # dropped_ack_pkt = acks[-1]
             # dropped_ack = dropped_ack_pkt[TCP].ack
             # acks = acks[:-1]
@@ -161,6 +164,12 @@ def q_listen(pkt_q, rtt, request_pkt):
         turn += 1
     print(",".join([str(i) for i in cwnds]))
     print(my_extract(INFLATE_TURN - 7, INFLATE_TURN, cwnds))
-    print(extract(cwnds))
+    print(extract(cwnds, INFLATE_TURN - 7, INFLATE_TURN))
+
+    ppid = os.getppid()
+    os.kill(ppid, signal.SIGKILL)
+    
+
+
 
 
