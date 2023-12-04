@@ -11,7 +11,7 @@ import multiprocessing as mp
 if __name__ == "__main__":
 	
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hi:u:o:")
+		opts, args = getopt.getopt(sys.argv[1:], "hi:u:o:f:t:")
 	except getopt.GetoptError:
 		print("Input Error")
 		sys.exit(2)
@@ -26,24 +26,18 @@ if __name__ == "__main__":
 			interface = arg
 		elif cmd in ("-u"):
 			url = arg
+		elif cmd in ("-f"):
+			fname = arg
 
-	# if url == '':
-	# 	print("Please input url")
-	# 	sys.exit(2)
 	if interface == '':
 		print("Please input network interface")
 		sys.exit(2)
-
-	# curr_dir = os.getcwd()
-	# if curr_dir[len(curr_dir) - 1] != '/':
-	# 	curr_dir += '/'
 
 
 	RTT = 0.6
 	MSS = 200
 	LOSS_CW = 128
 
-	# url='http.badssl.com'
 	url='20.106.168.254'
 	dst_ip = socket.gethostbyname(url)
 	site_obj = f"http://{url}/testfiles/100MBfile.txt"
@@ -75,8 +69,7 @@ if __name__ == "__main__":
 	
 
 	pkt_q = mp.Queue()
-	batch_proc = mp.Process(target=batch_acks.q_listen, args=(pkt_q, RTT, request))
+	batch_proc = mp.Process(target=batch_acks.q_listen, args=(pkt_q, RTT, request, fname))
 	batch_proc.start()
-
 	packets = sniff(prn=lambda pkt: pkt_q.put_nowait(pkt),filter=f"src host {syn_ack[IP].src}")
 	batch_proc.join()

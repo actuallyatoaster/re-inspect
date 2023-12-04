@@ -7,25 +7,6 @@ import signal
 
 
 def extract(cw, loss_turn, inflate_turn):
-
-
-    # if len(cw) < 15:
-    # 	return None
-    # index = 3
-    # while (cw[index] != 1):
-    # 	index =index + 1
-    # loss_rtt = index-1
-    # if cw[loss_rtt-1] > 128:
-    # 	loss_cw = cw[index-1]+cw[index-2]-128
-    # else:
-    # 	loss_cw = cw[index-1]
-
-    # index = index + 1
-    # while (cw[index+1] > 1.9 * cw[index] and cw[index+1] < 2.1*cw[index]):
-    # 	index = index + 1
-    # sst = cw[index+1]
-    # sst_rtt = index + 1
-
     loss_rtt = loss_turn
     loss_cw = cw[loss_turn]
 
@@ -75,7 +56,7 @@ def make_ack_for_pkt(pkt, max_ack):
                  seq=pkt[TCP].ack, ack=max_ack, flags='A')
     return (ack_pkt, max_ack)
 
-def q_listen(pkt_q, rtt, request_pkt):
+def q_listen(pkt_q, rtt, request_pkt, fname):
     time.sleep(rtt)
     send(request_pkt)
 
@@ -163,8 +144,18 @@ def q_listen(pkt_q, rtt, request_pkt):
         cwnds.append(this_cwnd)
         turn += 1
     print(",".join([str(i) for i in cwnds]))
-    print(my_extract(INFLATE_TURN - 7, INFLATE_TURN, cwnds))
-    print(extract(cwnds, INFLATE_TURN - 7, INFLATE_TURN))
+
+    mine = my_extract(INFLATE_TURN - 7, INFLATE_TURN, cwnds)
+    print(mine)
+
+    orig = extract(cwnds, INFLATE_TURN - 7, INFLATE_TURN)
+    print(orig)
+
+    with open(f"{fname}-orig.txt", "a") as f:
+        f.write(f"{orig}\n")
+
+    with open(f"{fname}-mine.txt", "a") as f:
+        f.write(f"{mine}\n")
 
     ppid = os.getppid()
     os.kill(ppid, signal.SIGKILL)
