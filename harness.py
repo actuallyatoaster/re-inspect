@@ -8,7 +8,7 @@ from pathlib import Path
 
 SSH_ADDR = '20.106.168.254'
 SSH_NAME = "azureuser"
-NUM_SAMPLES = 10
+NUM_SAMPLES = 60
 CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
 TIMEOUT = 90
 
