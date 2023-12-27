@@ -1,6 +1,5 @@
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import cross_validate
-import numpy as np
 
 CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
 CCA_ID_MAPPING = dict([(CCAS[i], i) for i in range(len(CCAS))])

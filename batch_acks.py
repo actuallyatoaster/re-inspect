@@ -5,7 +5,8 @@ import queue
 import os
 import signal
 
-
+# Extract function in code published by original authors
+# Kept as close as possible-- original crashed every time :/
 def extract(cw, loss_turn, inflate_turn):
     loss_rtt = loss_turn
     loss_cw = cw[loss_turn]
@@ -18,6 +19,7 @@ def extract(cw, loss_turn, inflate_turn):
             cw[loss_rtt+2]-cw[loss_rtt+1], cw[loss_rtt+3]-cw[loss_rtt+1], cw[loss_rtt+4]-cw[loss_rtt+1],
             cw[sst_rtt+1]- cw[sst_rtt], cw[sst_rtt+3]- cw[sst_rtt], cw[sst_rtt+5]- cw[sst_rtt], cw[sst_rtt+7]- cw[sst_rtt]]
 
+# Extract function implemented as described in the original paper
 def my_extract(drop_turn, inflate_turn, cwnds):
     print(drop_turn, inflate_turn)
     phase1_init_cwnd = cwnds[0]
@@ -32,17 +34,7 @@ def my_extract(drop_turn, inflate_turn, cwnds):
     print(p3_offsets)
     return (sum(p1_offsets), sum(p2_offsets), sum(p3_offsets))
 
-# TODO:
-# Measure RTT?
-# Try to make the vector
-# Plot graphs for each algorithm
-# try running tcpprob/ftrace on azure machine
-
-# Issues
-# bbr - we reach steady state ~15 packets/RTT way before reaching LOSS_CW
-# vegas staeady state ~60
 DROP_TURN = 14
-
 STOP_TURN = 30
 INFLATE_BY = 0.05
 LOSS_CW = 128
@@ -57,10 +49,12 @@ def make_ack_for_pkt(pkt, max_ack):
     return (ack_pkt, max_ack)
 
 def q_listen(pkt_q, rtt, request_pkt, fname):
+    # We just got a SYN-ACK, wait our emulated RTT then make the request
     time.sleep(rtt)
     local_port = request_pkt[TCP].sport
     send(request_pkt)
 
+    # Trace state setup
     max_seq_seen = 0
     cwnds = [1, 1]
     turn = 0
@@ -85,24 +79,19 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
         except queue.Empty:
             pass
 
-
-        seen_seqs = set()
         this_cwnd =  0
-        this_cwnd_test = 0
         acks = []
 
         for pkt_num in range(acks_to_send):
 
             pkt = pkts[pkt_num]
-            # Sequence check
-            if pkt[TCP].seq not in seen_seqs:
-                this_cwnd_test += 1
-                seen_seqs.add(pkt[TCP].seq)
-            
+
+            # Sequence check            
             if pkt[TCP].seq + len(bytes(pkt[TCP].payload)) > max_seq_seen:
                 this_cwnd += 1
                 max_seq_seen = pkt[TCP].seq + len(bytes(pkt[TCP].payload)) 
             
+            # This shouldn't happen if we have an appropriately-sized payload
             if "F" in pkt[TCP].flags:
                 pkt_payload_len = len(bytes(pkt[TCP].payload))
                 fin_ack_pkt = IP(dst=pkt[IP].src) / TCP(dport=80, sport=pkt[TCP].dport,
@@ -112,7 +101,7 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
                 pkt_q.close()
                 send(acks)
                 return
-            #print("seq", pkt[TCP].seq)
+
             pkt = make_ack_for_pkt(pkt, max_ack)
         
             if pkt is not None:
@@ -137,6 +126,7 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
         turn += 1
     print(",".join([str(i) for i in cwnds]))
 
+    # Construct extracted vectors and write our results
     mine = my_extract(INFLATE_TURN - 7, INFLATE_TURN, cwnds)
     print(mine)
 
@@ -152,6 +142,7 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
     with open(f"{fname}-cwnds.txt", "a") as f:
         f.write(f"{cwnds}\n")
 
+    # Kill the sniffer process
     ppid = os.getppid()
     os.kill(ppid, signal.SIGKILL)
     

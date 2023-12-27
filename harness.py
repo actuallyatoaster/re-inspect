@@ -24,8 +24,6 @@ def start_tcpdump(interface, trace_name):
     p = subprocess.Popen(["tcpdump", "-i", interface, "port", "80", "-w", trace_name])
     return p
 
-# TODO: add port filter in batch_acks
-
 # Reset firewall rule and sleep for a few seconds so OS (hopefully) sends RST packet for previous connections
 # Assumes no other iptables rules
 def try_send_reset(this_ip):
