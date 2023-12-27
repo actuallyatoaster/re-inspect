@@ -58,6 +58,7 @@ def make_ack_for_pkt(pkt, max_ack):
 
 def q_listen(pkt_q, rtt, request_pkt, fname):
     time.sleep(rtt)
+    local_port = request_pkt[TCP].sport
     send(request_pkt)
 
     max_seq_seen = 0
@@ -77,7 +78,9 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
         acks_to_send = 0
         try:
             while True:
-                pkts.append(pkt_q.get_nowait())
+                next_pkt = pkt_q.get_nowait()
+                if next_pkt[TCP].dport != local_port: continue
+                pkts.append(next_pkt)
                 acks_to_send += 1
         except queue.Empty:
             pass
@@ -118,17 +121,6 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
         # Drop some packet
         if (this_cwnd >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
-            # dropped_ack_pkt = acks[-1]
-            # dropped_ack = dropped_ack_pkt[TCP].ack
-            # acks = acks[:-1]
-
-            # assert(len(acks) >= 4)
-            # acks[-1] = acks[-4]
-            # acks[-2] = acks[-4]
-            # acks[-3] = acks[-4]
-            # acks = acks[:-1]
-            # max_ack = acks[-1][TCP].ack
-            # print("Triple DUP ack...")
 
             acks = []
             max_ack = max_ack_turn_start
