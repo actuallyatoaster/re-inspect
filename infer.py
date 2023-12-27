@@ -4,7 +4,7 @@ import numpy as np
 
 CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
 CCA_ID_MAPPING = dict([(CCAS[i], i) for i in range(len(CCAS))])
-RUN_ID = "1702854060"
+RUN_ID = "1702858527"
 
 def parse_results():
     run_dir = f"traces/run-{RUN_ID}/"
@@ -35,8 +35,8 @@ if __name__ == "__main__":
     
     tree = DecisionTreeClassifier(criterion="entropy")
 
-    cv_mine = cross_validate(tree, X_MINE, y=Y, cv=2)
-    cv_orig = cross_validate(tree, X_ORIG, y=Y, cv=2)
+    cv_mine = cross_validate(tree, X_MINE, y=Y, cv=10)
+    cv_orig = cross_validate(tree, X_ORIG, y=Y, cv=10)
 
     print(cv_mine)
     print(cv_orig)

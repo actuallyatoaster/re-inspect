@@ -19,18 +19,30 @@ def set_cca(cca, ip_str, username):
     client.connect(ip_str, username=username)
     client.exec_command(f"sudo sysctl net.ipv4.tcp_congestion_control={cca}")
 
-# TODO
+# Start taking a trace for this run
 def start_tcpdump(interface, trace_name):
     p = subprocess.Popen(["tcpdump", "-i", interface, "port", "80", "-w", trace_name])
     return p
 
-def do_tests(interface, ip_str, username):
+# TODO: add port filter in batch_acks
+
+# Reset firewall rule and sleep for a few seconds so OS (hopefully) sends RST packet for previous connections
+# Assumes no other iptables rules
+def try_send_reset(this_ip):
+    subprocess.Popen(["iptables", "-D", "OUTPUT", "1"])
+    time.sleep(3)
+
+    # iptables -A OUTPUT -p tcp --tcp-flags RST RST -s 10.0.0.193 -j DROP  
+    subprocess.Popen(["iptables", "-A", "OUTPUT", "-p", "tcp", "--tcp-flags", "RST", "RST", "-s", this_ip, "-j", "DROP"])
+
+def do_tests(interface, this_ip, ip_str, username):
     run_t = int(time.time())
     print("Run ID:", run_t)
     for cca in CCAS:
         set_cca(cca, ip_str, username)
         for test_num in range (NUM_SAMPLES):
             print("Running test:", cca, test_num)
+            try_send_reset(this_ip)
             loc = f"traces/run-{run_t}/{cca}/"
             Path(loc).mkdir(parents=True, exist_ok=True)
 
@@ -51,14 +63,10 @@ if __name__ == "__main__":
     for cmd, arg in opts:
         if cmd in ("-i"):
             interface = arg
-        elif cmd in ("-d"):
-            res_dir = arg
-        elif cmd in ("-n"):
-            num = arg
         elif cmd in ("-l"):
-            logfile = arg
+            this_ip = arg
 
-    do_tests(interface, SSH_ADDR, SSH_NAME)
+    do_tests(interface, this_ip, SSH_ADDR, SSH_NAME)
 
    
 

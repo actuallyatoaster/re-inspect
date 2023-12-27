@@ -157,6 +157,9 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
     with open(f"{fname}-mine.txt", "a") as f:
         f.write(f"{mine}\n")
 
+    with open(f"{fname}-cwnds.txt", "a") as f:
+        f.write(f"{cwnds}\n")
+
     ppid = os.getppid()
     os.kill(ppid, signal.SIGKILL)
     
