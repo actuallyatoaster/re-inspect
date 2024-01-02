@@ -8,6 +8,7 @@ import signal
 # Extract function in code published by original authors
 # Kept as close as possible-- original crashed every time :/
 def extract(cw, loss_turn, inflate_turn):
+    cw = [1, 1] + cw
     loss_rtt = loss_turn
     loss_cw = cw[loss_turn]
 
@@ -23,16 +24,16 @@ def extract(cw, loss_turn, inflate_turn):
 def my_extract(drop_turn, inflate_turn, cwnds):
     print(drop_turn, inflate_turn)
     phase1_init_cwnd = cwnds[0]
-    phase2_init_cwnd = cwnds[drop_turn + 3]
-    phase3_init_cwnd = cwnds[inflate_turn +3]
+    phase2_init_cwnd = cwnds[drop_turn + 1]
+    phase3_init_cwnd = cwnds[inflate_turn + 1]
 
-    p1_offsets = [i - phase1_init_cwnd for i in cwnds[0:drop_turn + 3]]
+    p1_offsets = [i - phase1_init_cwnd for i in cwnds[0:drop_turn + 1]]
     print(p1_offsets)
-    p2_offsets = [i-phase2_init_cwnd for i in cwnds[drop_turn + 3: inflate_turn + 3]]
+    p2_offsets = [i-phase2_init_cwnd for i in cwnds[drop_turn + 1: inflate_turn + 1]]
     print(p2_offsets)
-    p3_offsets = [i-phase3_init_cwnd for i in cwnds[inflate_turn+3:]]
+    p3_offsets = [i-phase3_init_cwnd for i in cwnds[inflate_turn+1:]]
     print(p3_offsets)
-    return (sum(p1_offsets), sum(p2_offsets), sum(p3_offsets))
+    return (drop_turn, inflate_turn, sum(p1_offsets), sum(p2_offsets), sum(p3_offsets))
 
 DROP_TURN = 14
 STOP_TURN = 30
@@ -56,7 +57,8 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
     # Trace state setup
     max_seq_seen = 0
-    cwnds = [1, 1]
+    # cwnds = [1, 1]
+    cwnds = []
     turn = 0
     max_ack = 0
     has_dropped = False
@@ -64,7 +66,9 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
     INFLATE_TURN = 100000000
     STOP_TURN = 100000000
 
-    while turn < STOP_TURN:
+    total_packets = 0
+
+    while turn < STOP_TURN or total_packets < 4000:
         time.sleep(rtt)
         max_ack_turn_start = max_ack
         print("======== Begin RTT===========")
@@ -108,14 +112,16 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
                 (ack, max_ack) = pkt
                 acks.append(ack)
 
+
+        total_packets += len(acks)
         # Drop some packet
         if (this_cwnd >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
 
             acks = []
-            max_ack = max_ack_turn_start
+            #max_ack = max_ack_turn_start
             has_dropped = True
-            INFLATE_TURN = turn + 7
-            STOP_TURN = INFLATE_TURN + 7
+            INFLATE_TURN = turn + 8
+            STOP_TURN = INFLATE_TURN + 8
 
         # Window Emptying
         if len(acks) > 0: send(acks) 

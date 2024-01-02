@@ -34,7 +34,7 @@ if __name__ == "__main__":
 		sys.exit(2)
 
 
-	RTT = 0.6
+	RTT = 0.8
 	MSS = 200
 	LOSS_CW = 128
 
