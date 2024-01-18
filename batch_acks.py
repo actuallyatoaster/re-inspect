@@ -57,8 +57,8 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
     # Trace state setup
     max_seq_seen = 0
-    # cwnds = [1, 1]
-    cwnds = []
+    cwnds = [1, 1]
+    # cwnds = []
     turn = 0
     max_ack = 0
     has_dropped = False
@@ -68,7 +68,7 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
     total_packets = 0
 
-    while turn < STOP_TURN or total_packets < 4000:
+    while turn < STOP_TURN:
         time.sleep(rtt)
         max_ack_turn_start = max_ack
         print("======== Begin RTT===========")
@@ -118,7 +118,7 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
         if (this_cwnd >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
 
             acks = []
-            #max_ack = max_ack_turn_start
+            max_ack = max_ack_turn_start #TODO: testme
             has_dropped = True
             INFLATE_TURN = turn + 8
             STOP_TURN = INFLATE_TURN + 8

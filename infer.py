@@ -5,7 +5,7 @@ import numpy as np
 
 CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
 CCA_ID_MAPPING = dict([(CCAS[i], i) for i in range(len(CCAS))])
-RUN_ID = "1703732027"
+RUN_ID = "1705029330"
 
 def parse_results():
     run_dir = f"traces/run-{RUN_ID}/"
@@ -41,6 +41,12 @@ def parse_results():
 
 if __name__ == "__main__":
     (X_MINE, X_ORIG, X_CWND, Y) = parse_results()
+
+    X_MINE = list(map(lambda x: list(map(int, x)), X_MINE))
+    X_ORIG = list(map(lambda x: list(map(float, x)), X_ORIG))
+    X_CWND = list(map(lambda x: list(map(int, x)), X_CWND))
+
+    # print(X_ORIG)
     
     tree = DecisionTreeClassifier(criterion="entropy")
     # tree = DecisionTreeClassifier()
@@ -49,15 +55,13 @@ if __name__ == "__main__":
        'acc1': make_scorer(accuracy_score, labels = [1]),
        'acc2': make_scorer(accuracy_score, labels = [2])}
 
-    print(X_CWND)
     cv_mine = cross_validate(tree, X_MINE, y=Y, cv=10)
     cv_orig = cross_validate(tree, X_ORIG, y=Y, cv=10)
     cv_cwnds = cross_validate(tree, X_CWND, y=Y, cv=10)
 
+    print(cv_cwnds)
     print(cv_mine)
     print(cv_orig)
-    print(cv_cwnds)
-
 
     ####
     # KFold cross validation
@@ -66,9 +70,6 @@ if __name__ == "__main__":
     tree.fit(X_train, y_train)
     
     y_pred = tree.predict(X_test)
-    print(y_pred)
-    print(y_test)
-
     print(classification_report(y_test, y_pred, target_names=CCAS))
 
 

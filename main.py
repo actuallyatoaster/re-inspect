@@ -8,6 +8,8 @@ from scapy.all import IP, TCP, sr1, sniff
 import batch_acks
 import multiprocessing as mp
 
+# DTW on raw time series
+
 if __name__ == "__main__":
 	
 	try:
@@ -38,7 +40,7 @@ if __name__ == "__main__":
 	MSS = 200
 	LOSS_CW = 128
 
-	url='20.106.168.254'
+	url='18.117.75.236'
 	dst_ip = socket.gethostbyname(url)
 	site_obj = f"http://{url}/testfiles/100MBfile.txt"
 
