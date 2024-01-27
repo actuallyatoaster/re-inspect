@@ -40,7 +40,7 @@ if __name__ == "__main__":
 	MSS = 200
 	LOSS_CW = 128
 
-	url='18.117.75.236'
+	url='74.235.199.17'
 	dst_ip = socket.gethostbyname(url)
 	site_obj = f"http://{url}/testfiles/100MBfile.txt"
 

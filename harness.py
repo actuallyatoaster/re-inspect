@@ -6,10 +6,11 @@ import time
 from pathlib import Path
 
 
-SSH_ADDR = '18.117.75.236'
-SSH_NAME = "ubuntu"
+SSH_ADDR = '74.235.199.17'
+SSH_NAME = "azureuser"
 NUM_SAMPLES = 60
-CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
+# CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
+CCAS = ["vegas"]
 TIMEOUT = 90
 
 
