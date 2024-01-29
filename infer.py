@@ -22,7 +22,7 @@ plt.rc('axes.spines', right=False, top=False)
 # testing_cca, ig-azure, ig-aws
 # bbr, 5, 728712871821
 
-CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
+CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah", "cdg", "nv", "hybla"]
 # CCAS = ["cubic", "reno", "yeah"]
 # CCAS = ["cubic", "reno", "bbr"]
 CCA_ID_MAPPING = dict([(CCAS[i], i) for i in range(len(CCAS))])
@@ -33,7 +33,13 @@ CCA_ID_MAPPING = dict([(CCAS[i], i) for i in range(len(CCAS))])
 
 # RUN_ID = "1706073704"
 
-RUN_ID = "pruned"
+# RUN_ID = "1706414392"
+
+
+# fixed azure run
+RUN_ID = "1706464363"
+
+# RUN_ID = "pruned"
 
 def parse_results():
     run_dir = f"traces/run-{RUN_ID}/"
@@ -51,7 +57,7 @@ def parse_results():
             lines = f.readlines()
             orig_vecs = list(map(lambda s: s.strip().replace("[", "").replace("]","").split(","), lines))
 
-        with open(run_dir + cca + "/vectors-cwnds.txt", 'r') as f:
+        with open(run_dir + cca + "/vectors-cwnds_bc.txt", 'r') as f:
             lines = f.readlines()
             cwnd_vecs = list(map(lambda s: s.strip().replace("[", "").replace("]","").split(","), lines))
 
@@ -63,7 +69,7 @@ def parse_results():
         Y.extend([CCA_ID_MAPPING[cca] for _ in range(len(my_vecs))])
     
     cwnd_max_len = max([len(c) for c in X_CWND]) 
-    X_CWND_PADDED = [c + [0 for _ in range(cwnd_max_len - len(c))] for c in X_CWND]
+    X_CWND_PADDED = [c + [0.0 for _ in range(cwnd_max_len - len(c))] for c in X_CWND]
     return (X_MINE, X_ORIG, X_CWND_PADDED, X_CWND, Y)
 
 
@@ -91,10 +97,10 @@ def get_nn_dtw(X_train, Y_train, x):
 if __name__ == "__main__":
     (X_MINE, X_ORIG, X_CWND, X_CWND_UNPAD, Y) = parse_results()
 
-    X_MINE = list(map(lambda x: list(map(int, x)), X_MINE))
+    X_MINE = list(map(lambda x: list(map(float, x)), X_MINE))
     X_ORIG = list(map(lambda x: list(map(float, x)), X_ORIG))
-    X_CWND = list(map(lambda x: list(map(int, x)), X_CWND))
-    X_CWND_UNPAD = list(map(lambda x: list(map(int, x)), X_CWND_UNPAD))
+    X_CWND = list(map(lambda x: list(map(float, x)), X_CWND))
+    X_CWND_UNPAD = list(map(lambda x: list(map(float, x)), X_CWND_UNPAD))
 
     # print(X_ORIG)
     
@@ -116,7 +122,7 @@ if __name__ == "__main__":
     ####
     # Do a single fold and pretty-print results
     tree = DecisionTreeClassifier(criterion="entropy")
-    X_train, X_test, y_train, y_test = train_test_split(X_CWND, Y, random_state=1)
+    X_train, X_test, y_train, y_test = train_test_split(X_CWND, Y, random_state=2)
     tree.fit(X_train, y_train)
     
     y_pred = tree.predict(X_test)
@@ -125,13 +131,13 @@ if __name__ == "__main__":
 
     # ########
     # DTW
-    # X_train, X_test, y_train, y_test = train_test_split(X_CWND_UNPAD, Y, random_state=1)
+    X_train, X_test, y_train, y_test = train_test_split(X_CWND_UNPAD, Y, random_state=1)
 
-    # y_pred_and_closests = [get_nn_dtw(X_train, y_train, x) for x in X_test]
-    # y_pred = [x[0] for x in y_pred_and_closests]
-    # closests = [x[1] for x in y_pred_and_closests]
-    # print(classification_report(y_test, y_pred, target_names=CCAS))
-    # print(len(X_train), len(X_test))
+    y_pred_and_closests = [get_nn_dtw(X_train, y_train, x) for x in X_test]
+    y_pred = [x[0] for x in y_pred_and_closests]
+    closests = [x[1] for x in y_pred_and_closests]
+    print(classification_report(y_test, y_pred, target_names=CCAS))
+    print(len(X_train), len(X_test))
 
     #########
     # DTW mismatch plots
@@ -173,9 +179,9 @@ if __name__ == "__main__":
 
 
     # Manual bar graphs for accuracy blehhh
-    recall = [0.79, 0.6, 0.8, 0.36, 0.23, 0.27, 0.00, 0.40, 1.00, 0.24, 0.13, 0.78]
-    plt.bar(CCAS, recall)
-    plt.xlabel("CCA")
-    plt.ylabel("Recall")
-    plt.title("Inspector Gadget Classification (AWS)")
-    plt.show()
+    # recall = [0.79, 0.6, 0.8, 0.36, 0.23, 0.27, 0.00, 0.40, 1.00, 0.24, 0.13, 0.78]
+    # plt.bar(CCAS, recall)
+    # plt.xlabel("CCA")
+    # plt.ylabel("Recall")
+    # plt.title("Inspector Gadget Classification (AWS)")
+    # plt.show()

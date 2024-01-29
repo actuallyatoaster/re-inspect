@@ -138,7 +138,7 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
         total_packets += len(acks)
         # Drop some packet
-        if (this_cwnd >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
+        if (this_cwnd_bc >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
 
             acks = []
             max_ack = max_ack_turn_start #TODO: testme
@@ -217,7 +217,7 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
         f.write(f"{cwnds}\n")
 
     with open(f"{fname}-cwnds_bc.txt", "a") as f:
-        f.write(f"{cwnds}\n")
+        f.write(f"{cwnds_bc}\n")
 
     # Kill the sniffer process
     ppid = os.getppid()

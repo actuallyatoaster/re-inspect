@@ -8,9 +8,10 @@ from pathlib import Path
 
 SSH_ADDR = '74.235.199.17'
 SSH_NAME = "azureuser"
-NUM_SAMPLES = 60
-# CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
-CCAS = ["vegas"]
+NUM_SAMPLES = 35
+# CCAS = ["reno", "cubic", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah"]
+CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah", "cdg", "nv", "hybla"]
+# CCAS = ["vegas"]
 TIMEOUT = 90
 
 
@@ -39,7 +40,11 @@ def do_tests(interface, this_ip, ip_str, username):
     print("Run ID:", run_t)
     for cca in CCAS:
         set_cca(cca, ip_str, username)
-        for test_num in range (NUM_SAMPLES):
+        if cca in {"cubic", "bic"}:
+            this_num_samples = 60
+        else:
+            this_num_samples = NUM_SAMPLES
+        for test_num in range (this_num_samples):
             print("Running test:", cca, test_num)
             try_send_reset(this_ip)
             loc = f"traces/run-{run_t}/{cca}/"
