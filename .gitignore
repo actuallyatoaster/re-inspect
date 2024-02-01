@@ -2,5 +2,6 @@ __pycache__
 *.pcap
 *.txt
 old_traces
+traces
 env
 plots
