@@ -46,7 +46,9 @@ CCA_ID_MAPPING = dict([(CCAS[i], i) for i in range(len(CCAS))])
 # RUN_ID = "azure-cloudlab-merged"
 # RUN_ID = "pruned"
 
-RUN_ID = "azure-cloudlab-fixed"
+# RUN_ID = "azure-cloudlab-fixed"
+
+RUN_ID = "aws-cloudlab"
 
 def parse_results():
     run_dir = f"traces/run-{RUN_ID}/"

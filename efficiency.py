@@ -2,7 +2,7 @@ import glob
 import subprocess
 import json
 
-RUN_ID = "azure-cloudlab-fixed"
+RUN_ID = "aws-cloudlab"
 CCAS = ["cubic", "reno", "bbr", "bic", "highspeed", "htcp", "illinois", "scalable", "vegas", "veno", "westwood", "yeah", "cdg", "nv", "hybla"]
 
 def get_metrics_cca(run, cca):
