@@ -1,14 +1,18 @@
 import random
 import sys
+from time import sleep
 
 import getopt
 import socket
-from scapy.all import IP, TCP, sr1, sniff
+from scapy.all import *
 
 import batch_acks
 import multiprocessing as mp
 
 # DTW on raw time series
+def start_tcpdump(interface, trace_name, host):
+    p = subprocess.Popen(["tcpdump", "-i", interface, "port", "80", "or", "port", "443", "and", "host", host, "-w", trace_name])
+    return p
 
 if __name__ == "__main__":
 	
@@ -54,24 +58,35 @@ if __name__ == "__main__":
 		site_url = site_obj
 		req_obj = '/'
 
-	dst_port = 80
-	dst_name = url
+	server = "142.251.40.174"
+	reqstr = f"GET / HTTP/1.1\r\nHost: {server}\r\nConnection: Close\r\n\r\n"
 
-	seq = random.randrange(100000,99999999)
-	src_port = random.randrange(20000,50000)
+	start_tcpdump("wlo1", "test-tls.pcap", server)
 
-	syn = IP(dst=dst_ip) / TCP(dport=80, sport=src_port, seq=seq, flags='S',
-							   options=[("MSS",MSS), ("NOP",None),('WScale', 10)])
-	syn_ack = sr1(syn)
-	print(syn_ack)
-	print(syn_ack[IP].src)
-	getStr = f'GET {req_obj} HTTP/1.1\r\nHost: {url}\r\nConnection: Close\r\n\r\n'
-	request = IP(dst=f'{url}') / TCP(dport=80, sport=syn_ack[TCP].dport,
-				seq=syn_ack[TCP].ack, ack=syn_ack[TCP].seq + 1, flags='A') / getStr
-	
+	load_layer("tls")
+	subprocess.run(f"tc qdisc del dev {interface} root".split(" "))	
+	sleep(2)
+	subprocess.run(f"sudo tc qdisc add dev {interface} root netem slot 700ms".split(" "))
+	sleep(2)
 
 	pkt_q = mp.Queue()
-	batch_proc = mp.Process(target=batch_acks.q_listen, args=(pkt_q, RTT, request, fname))
-	batch_proc.start()
-	packets = sniff(prn=lambda pkt: pkt_q.put_nowait(pkt),filter=f"src host {syn_ack[IP].src}")
-	batch_proc.join()
+	sniff_proc = mp.Process(target=sniff, kwargs = {"prn": lambda pkt: pkt_q.put_nowait(pkt), "filter": f"src host {server}"})
+	sniff_proc.start()
+
+	conn = TLSClientAutomaton.tlslink(Raw, server=server, dport=443)
+	# print(conn.atmt.__dir__())
+	while not conn.atmt.__IG_HANDSHAKE_DONE__: pass
+	
+	print("Clearing sniff queue!")
+	try: 
+		while True: print(pkt_q.get_nowait())
+	except queue.Empty:
+		print("empty")
+		pass
+
+	conn.send(Raw(reqstr))
+
+	# while not conn.atmt.__IG_SETUP_DONE__: pass
+	print("setup done!")
+	subprocess.run(f"tc qdisc del dev {interface} root".split(" "))	
+	batch_acks.q_listen(interface, conn, pkt_q, RTT, reqstr, fname)

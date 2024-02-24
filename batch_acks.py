@@ -1,6 +1,6 @@
 import time
 import multiprocessing as mp
-from scapy.all import IP, TCP, send
+from scapy.all import IP, TCP, send, Raw
 import queue
 import os
 import signal
@@ -46,15 +46,14 @@ def make_ack_for_pkt(pkt, max_ack):
     #print("len ", pkt_payload_len, len(pkt[TCP].payload))
     if pkt_payload_len == 0: return None
     max_ack = max(max_ack, pkt[TCP].seq + pkt_payload_len)
-    ack_pkt = IP(dst=pkt[IP].src) / TCP(dport=80, sport=pkt[TCP].dport,
+    ack_pkt = IP(dst=pkt[IP].src) / TCP(dport=443, sport=pkt[TCP].dport,
                  seq=pkt[TCP].ack, ack=max_ack, flags='A')
     return (ack_pkt, max_ack)
 
-def q_listen(pkt_q, rtt, request_pkt, fname):
+def q_listen(interface, conn, pkt_q, rtt, reqstr, fname):
     # We just got a SYN-ACK, wait our emulated RTT then make the request
-    time.sleep(rtt)
-    local_port = request_pkt[TCP].sport
-    send(request_pkt)
+    # time.sleep(rtt)
+    
 
     # Trace state setup
     max_seq_seen = 0
@@ -62,7 +61,8 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
     cwnds_bc = [1.0, 1.0]
     # cwnds = []
     turn = 0
-    max_ack = request_pkt[TCP].ack
+
+    max_ack = 0  # TODO
     has_dropped = False
     just_dropped = False
 
@@ -78,7 +78,7 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
     while (turn < STOP_TURN or total_packets < 4000) and turn < MAX_STOP_TURN:
         purge_queue = False
-        time.sleep(rtt)
+        if (turn > 0): time.sleep(rtt)
         max_ack_turn_start = max_ack
         print("======== Begin RTT===========")
         pkts = []
@@ -86,8 +86,10 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
         try:
             while True:
                 next_pkt = pkt_q.get_nowait()
-                if next_pkt[TCP].dport != local_port: continue
+                #TODO: READD the port check !!!!
+                #if next_pkt[TCP].dport != local_port: continue
                 pkts.append(next_pkt)
+                print(bytes(next_pkt[TCP].payload))
                 acks_to_send += 1
         except queue.Empty:
             pass
@@ -100,15 +102,10 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
             pkt = pkts[pkt_num]
 
-            # Sequence check            
-            # if pkt[TCP].seq + len(bytes(pkt[TCP].payload)) > max_seq_seen:
-            #     this_cwnd += 1
-            #     max_seq_seen = pkt[TCP].seq + len(bytes(pkt[TCP].payload)) 
-            
             # This shouldn't happen if we have an appropriately-sized payload
             if "F" in pkt[TCP].flags:
                 pkt_payload_len = len(bytes(pkt[TCP].payload))
-                fin_ack_pkt = IP(dst=pkt[IP].src) / TCP(dport=80, sport=pkt[TCP].dport,
+                fin_ack_pkt = IP(dst=pkt[IP].src) / TCP(dport=443, sport=pkt[TCP].dport,
                                  seq=pkt[TCP].ack, ack=pkt[TCP].seq + pkt_payload_len + 1, flags='FA')
                 acks.append(fin_ack_pkt)
                 print("Sent finack")
@@ -120,8 +117,9 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
             if pkt is not None and not just_dropped:
                 (_, new_max_ack) = pkt
-                if new_max_ack > max_ack + MAX_ACK_GAP:
-                    pkt = None
+                #TODO: READD
+                # if new_max_ack > max_ack + MAX_ACK_GAP:
+                    # pkt = None
         
             if pkt is not None:
                 old_max_ack = max_ack
@@ -138,14 +136,15 @@ def q_listen(pkt_q, rtt, request_pkt, fname):
 
         total_packets += len(acks)
         # Drop some packet
-        if (this_cwnd_bc >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
+        #TODO: READD
+        # if (this_cwnd_bc >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
 
-            acks = []
-            max_ack = max_ack_turn_start #TODO: testme
-            has_dropped = True
-            just_dropped = True
-            INFLATE_TURN = turn + 8
-            STOP_TURN = INFLATE_TURN + 8
+        #     acks = []
+        #     max_ack = max_ack_turn_start #TODO: testme
+        #     has_dropped = True
+        #     just_dropped = True
+        #     INFLATE_TURN = turn + 8
+        #     STOP_TURN = INFLATE_TURN + 8
             
 
         # dup ack for f-rto avoidance
