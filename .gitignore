@@ -3,5 +3,5 @@ __pycache__
 *.txt
 old_traces
 traces
-env
+# env
 plots
