@@ -58,8 +58,8 @@ if __name__ == "__main__":
 		site_url = site_obj
 		req_obj = '/'
 
-	server = "142.251.40.174"
-	reqstr = f"GET / HTTP/1.1\r\nHost: {server}\r\nConnection: Close\r\n\r\n"
+	server = "128.110.219.19"
+	reqstr = f"GET /testfiles/100MBfile.txt HTTP/1.1\r\nHost: {server}\r\nConnection: Close\r\n\r\n"
 
 	start_tcpdump("wlo1", "test-tls.pcap", server)
 

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+ethtool -K $1 tso off
+ethtool -K $1 gro off
+ethtool -K $1 lro off
+ethtool -K $1 tx off
+ethtool -K $1 sg off

@@ -89,7 +89,7 @@ def q_listen(interface, conn, pkt_q, rtt, reqstr, fname):
                 #TODO: READD the port check !!!!
                 #if next_pkt[TCP].dport != local_port: continue
                 pkts.append(next_pkt)
-                print(bytes(next_pkt[TCP].payload))
+                # print(bytes(next_pkt[TCP].payload))
                 acks_to_send += 1
         except queue.Empty:
             pass
@@ -132,7 +132,7 @@ def q_listen(interface, conn, pkt_q, rtt, reqstr, fname):
                 acks.append(ack)
 
 
-        this_cwnd_bc = (max_ack - max_ack_turn_start) / 200
+        this_cwnd_bc = (max_ack - max_ack_turn_start) / 188
 
         total_packets += len(acks)
         # Drop some packet
