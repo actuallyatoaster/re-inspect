@@ -1,1 +1,0 @@
-Code for paper [Inspector Gadget: A Framework for Inferring TCP Con- gestion Control Algorithms and Protocol Configurations.](https://tma.ifip.org/2020/wp-content/uploads/sites/9/2020/06/tma2020-camera-paper24.pdf)
