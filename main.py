@@ -65,9 +65,9 @@ if __name__ == "__main__":
 
 	load_layer("tls")
 	subprocess.run(f"tc qdisc del dev {interface} root".split(" "))	
-	sleep(2)
+	sleep(1)
 	subprocess.run(f"sudo tc qdisc add dev {interface} root netem slot 700ms".split(" "))
-	sleep(2)
+	sleep(1)
 
 	pkt_q = mp.Queue()
 	sniff_proc = mp.Process(target=sniff, kwargs = {"prn": lambda pkt: pkt_q.put_nowait(pkt), "filter": f"src host {server}"})
@@ -77,7 +77,8 @@ if __name__ == "__main__":
 	# print(conn.atmt.__dir__())
 	while not conn.atmt.__IG_HANDSHAKE_DONE__: pass
 	
-	print("Clearing sniff queue!")
+	local_port = conn.atmt.__IG_PORT_NUMBER__
+
 	try: 
 		while True: print(pkt_q.get_nowait())
 	except queue.Empty:
@@ -89,4 +90,4 @@ if __name__ == "__main__":
 	# while not conn.atmt.__IG_SETUP_DONE__: pass
 	print("setup done!")
 	subprocess.run(f"tc qdisc del dev {interface} root".split(" "))	
-	batch_acks.q_listen(interface, conn, pkt_q, RTT, reqstr, fname)
+	batch_acks.q_listen(pkt_q, local_port, RTT, fname)

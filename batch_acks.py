@@ -50,7 +50,7 @@ def make_ack_for_pkt(pkt, max_ack):
                  seq=pkt[TCP].ack, ack=max_ack, flags='A')
     return (ack_pkt, max_ack)
 
-def q_listen(interface, conn, pkt_q, rtt, reqstr, fname):
+def q_listen(pkt_q, local_port, rtt, fname):
     # We just got a SYN-ACK, wait our emulated RTT then make the request
     # time.sleep(rtt)
     
@@ -86,8 +86,7 @@ def q_listen(interface, conn, pkt_q, rtt, reqstr, fname):
         try:
             while True:
                 next_pkt = pkt_q.get_nowait()
-                #TODO: READD the port check !!!!
-                #if next_pkt[TCP].dport != local_port: continue
+                if next_pkt[TCP].dport != local_port: continue
                 pkts.append(next_pkt)
                 # print(bytes(next_pkt[TCP].payload))
                 acks_to_send += 1
