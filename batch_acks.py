@@ -117,7 +117,9 @@ def q_listen(pkt_q, local_port, rtt, fname):
             if pkt is not None and not just_dropped:
                 (_, new_max_ack) = pkt
                 if turn > 1 and new_max_ack > max_ack + MAX_ACK_GAP:
-                    pkt = None
+                    print(pkt)
+                    pkt[0][TCP].ack = max_ack
+                    pkt = (pkt[0], max_ack) 
         
             if pkt is not None:
                 old_max_ack = max_ack
@@ -138,38 +140,39 @@ def q_listen(pkt_q, local_port, rtt, fname):
 
             acks = []
             max_ack = max_ack_turn_start #TODO: testme
+            frto_ack = max_ack_turn_start
             has_dropped = True
-            just_dropped = True
+            # just_dropped = True
             INFLATE_TURN = turn + 8
             STOP_TURN = INFLATE_TURN + 8
             
 
         # dup ack for f-rto avoidance
         # first RTT with cwnd >= 1 after drop, only send acks for the lowest-seq packet in the cwnd
-        if just_dropped and len(acks) == 1:
-            if frto_ack is None:
-                frto_ack = acks[0][TCP].ack
-            else:
-                acks[0][TCP].ack = frto_ack
-                just_dropped = False
-                max_ack = frto_ack
+        # if just_dropped and len(acks) == 1:
+        #     if frto_ack is None:
+        #         frto_ack = acks[0][TCP].ack
+        #     else:
+        #         acks[0][TCP].ack = frto_ack
+        #         just_dropped = False
+        #         max_ack = frto_ack
 
-        if just_dropped and len(acks) > 1:
-            print("Doing dup-ack to avoid f-rto")
+        # if just_dropped and len(acks) > 1:
+        #     print("Doing dup-ack to avoid f-rto")
 
-            if frto_ack is None:
-                min_ack = min(acks, key = lambda ack: ack[TCP].ack)[TCP].ack
-            else:
-                min_ack = frto_ack
+        #     if frto_ack is None:
+        #         min_ack = min(acks, key = lambda ack: ack[TCP].ack)[TCP].ack
+        #     else:
+        #         min_ack = frto_ack
 
-            for i in range(len(acks)):
-                acks[i][TCP].ack = min_ack
+        #     for i in range(len(acks)):
+        #         acks[i][TCP].ack = min_ack
 
-            just_dropped = False
-            this_cwnd = 1
-            this_cwnd_bc = 1
-            purge_queue = True
-            max_ack = min_ack
+        #     just_dropped = False
+        #     this_cwnd = 1
+        #     this_cwnd_bc = 1
+        #     purge_queue = True
+        #     max_ack = min_ack
 
          
 
