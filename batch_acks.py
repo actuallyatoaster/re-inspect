@@ -39,7 +39,7 @@ DROP_TURN = 14
 STOP_TURN = 30
 INFLATE_BY = 0.05
 LOSS_CW = 128
-MAX_ACK_GAP = 20000
+MAX_ACK_GAP = 10000
 
 def make_ack_for_pkt(pkt, max_ack):
     pkt_payload_len = len(bytes(pkt[TCP].payload))
@@ -116,9 +116,8 @@ def q_listen(pkt_q, local_port, rtt, fname):
 
             if pkt is not None and not just_dropped:
                 (_, new_max_ack) = pkt
-                #TODO: READD
-                # if new_max_ack > max_ack + MAX_ACK_GAP:
-                    # pkt = None
+                if turn > 1 and new_max_ack > max_ack + MAX_ACK_GAP:
+                    pkt = None
         
             if pkt is not None:
                 old_max_ack = max_ack
@@ -135,15 +134,14 @@ def q_listen(pkt_q, local_port, rtt, fname):
 
         total_packets += len(acks)
         # Drop some packet
-        #TODO: READD
-        # if (this_cwnd_bc >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
+        if turn > 1 and (this_cwnd_bc >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
 
-        #     acks = []
-        #     max_ack = max_ack_turn_start #TODO: testme
-        #     has_dropped = True
-        #     just_dropped = True
-        #     INFLATE_TURN = turn + 8
-        #     STOP_TURN = INFLATE_TURN + 8
+            acks = []
+            max_ack = max_ack_turn_start #TODO: testme
+            has_dropped = True
+            just_dropped = True
+            INFLATE_TURN = turn + 8
+            STOP_TURN = INFLATE_TURN + 8
             
 
         # dup ack for f-rto avoidance
