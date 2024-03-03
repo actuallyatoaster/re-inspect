@@ -59,6 +59,9 @@ def q_listen(pkt_q, local_port, rtt, fname):
     max_seq_seen = 0
     cwnds = [1, 1]
     cwnds_bc = [1.0, 1.0]
+    cwnds_p1 = []
+    cwnds_p2 = []
+    cwnds_p3 = []
     # cwnds = []
     turn = 0
 
@@ -72,7 +75,7 @@ def q_listen(pkt_q, local_port, rtt, fname):
     INFLATE_TURN = 100000000
     STOP_TURN = 100000000
 
-    MAX_STOP_TURN = 50
+    MAX_STOP_TURN = 40
 
     total_packets = 0
 
@@ -143,7 +146,7 @@ def q_listen(pkt_q, local_port, rtt, fname):
             frto_ack = max_ack_turn_start
             has_dropped = True
             # just_dropped = True
-            INFLATE_TURN = turn + 8
+            INFLATE_TURN = turn + 10
             STOP_TURN = INFLATE_TURN + 8
             
 
@@ -180,7 +183,14 @@ def q_listen(pkt_q, local_port, rtt, fname):
         print("This window: ", this_cwnd, turn, INFLATE_TURN, STOP_TURN, total_packets, just_dropped, this_cwnd_bc)
         cwnds.append(this_cwnd)
         cwnds_bc.append(this_cwnd_bc)
-        turn += 1
+        if not has_dropped:
+            cwnds_p1.append(this_cwnd_bc)
+        elif turn < INFLATE_TURN:
+            cwnds_p2.append(this_cwnd_bc)
+        else:
+            cwnds_p3.append(this_cwnd_bc)
+
+        if (turn < 2 or this_cwnd_bc > 0.9): turn += 1
 
         # ignore packets that might have gotten interwoven this RTT
         if purge_queue:
@@ -200,23 +210,23 @@ def q_listen(pkt_q, local_port, rtt, fname):
     print(",".join([str(i) for i in cwnds_bc]))
 
     # Construct extracted vectors and write our results
-    mine = my_extract(INFLATE_TURN - 7, INFLATE_TURN, cwnds_bc)
-    print(mine)
+    # mine = my_extract(INFLATE_TURN - 7, INFLATE_TURN, cwnds_bc)
+    # print(mine)
 
-    orig = extract(cwnds_bc, INFLATE_TURN - 7, INFLATE_TURN)
-    print(orig)
+    # orig = extract(cwnds_bc, INFLATE_TURN - 7, INFLATE_TURN)
+    # print(orig)
 
-    with open(f"{fname}-orig.txt", "a") as f:
-        f.write(f"{orig}\n")
+    # with open(f"{fname}-orig.txt", "a") as f:
+    #     f.write(f"{orig}\n")
 
-    with open(f"{fname}-mine.txt", "a") as f:
-        f.write(f"{mine}\n")
+    # with open(f"{fname}-mine.txt", "a") as f:
+    #     f.write(f"{mine}\n")
 
-    with open(f"{fname}-cwnds.txt", "a") as f:
-        f.write(f"{cwnds}\n")
+    # with open(f"{fname}-cwnds.txt", "a") as f:
+    #     f.write(f"{cwnds}\n")
 
     with open(f"{fname}-cwnds_bc.txt", "a") as f:
-        f.write(f"{cwnds_bc}\n")
+        f.write(f"{cwnds_p1} || {cwnds_p2} || {cwnds_p3}\n")
 
     # Kill the sniffer process
     ppid = os.getppid()
