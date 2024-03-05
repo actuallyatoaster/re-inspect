@@ -41,7 +41,10 @@ INFLATE_BY = 0.05
 LOSS_CW = 128
 MAX_ACK_GAP = 10000
 
+
+
 def make_ack_for_pkt(pkt, max_ack):
+
     pkt_payload_len = len(bytes(pkt[TCP].payload))
     #print("len ", pkt_payload_len, len(pkt[TCP].payload))
     if pkt_payload_len == 0: return None
@@ -54,7 +57,9 @@ def q_listen(pkt_q, local_port, rtt, fname):
     # We just got a SYN-ACK, wait our emulated RTT then make the request
     # time.sleep(rtt)
     
-
+    DST_IP = None
+    SRC_PORT = None
+    SEQ = None
     # Trace state setup
     max_seq_seen = 0
     cwnds = [1, 1]
@@ -115,14 +120,22 @@ def q_listen(pkt_q, local_port, rtt, fname):
                 send(acks)
                 return
 
+            if SEQ is None and pkt_num > 5:
+                DST_IP = pkt[IP].src
+                SRC_PORT = pkt[TCP].dport
+                SEQ = pkt[TCP].ack
+           
             pkt = make_ack_for_pkt(pkt, max_ack)
 
             if pkt is not None and not just_dropped:
                 (_, new_max_ack) = pkt
                 if has_dropped and new_max_ack > max_ack + MAX_ACK_GAP:
-                    print(pkt)
-                    pkt[0][TCP].ack = max_ack
-                    pkt = (pkt[0], max_ack) 
+                    if len(acks) < 2:
+                        print(pkt)
+                        pkt[0][TCP].ack = max_ack
+                        pkt = (pkt[0], max_ack) 
+                    else:
+                        pkt = None
         
             if pkt is not None:
                 old_max_ack = max_ack
@@ -140,46 +153,26 @@ def q_listen(pkt_q, local_port, rtt, fname):
         total_packets += len(acks)
         # Drop some packet
         if turn > 1 and (this_cwnd_bc >= LOSS_CW  or turn == LATEST_DROP) and not has_dropped:
-
+            min_ack = min(acks, key=lambda x:x[TCP].ack)
             acks = []
-            max_ack = max_ack_turn_start #TODO: testme
-            frto_ack = max_ack_turn_start
+            # max_ack = max_ack_turn_start #TODO: testme
+            max_ack = min_ack[TCP].ack
             has_dropped = True
             # just_dropped = True
             INFLATE_TURN = turn + 10
             STOP_TURN = INFLATE_TURN + 8
+
+            fake_ack1 = IP(dst=DST_IP) / TCP(dport=443, sport=SRC_PORT,
+                 seq=SEQ, ack=max_ack, flags='A')
             
-
-        # dup ack for f-rto avoidance
-        # first RTT with cwnd >= 1 after drop, only send acks for the lowest-seq packet in the cwnd
-        # if just_dropped and len(acks) == 1:
-        #     if frto_ack is None:
-        #         frto_ack = acks[0][TCP].ack
-        #     else:
-        #         acks[0][TCP].ack = frto_ack
-        #         just_dropped = False
-        #         max_ack = frto_ack
-
-        # if just_dropped and len(acks) > 1:
-        #     print("Doing dup-ack to avoid f-rto")
-
-        #     if frto_ack is None:
-        #         min_ack = min(acks, key = lambda ack: ack[TCP].ack)[TCP].ack
-        #     else:
-        #         min_ack = frto_ack
-
-        #     for i in range(len(acks)):
-        #         acks[i][TCP].ack = min_ack
-
-        #     just_dropped = False
-        #     this_cwnd = 1
-        #     this_cwnd_bc = 1
-        #     purge_queue = True
-        #     max_ack = min_ack
-
+            fake_ack2 = IP(dst=DST_IP) / TCP(dport=443, sport=SRC_PORT,
+                 seq=SEQ, ack=max_ack, flags='A')
+            
+            acks = [fake_ack1, fake_ack2]
          
 
         if turn >= INFLATE_TURN: rtt += INFLATE_BY
+
         print("This window: ", this_cwnd, turn, INFLATE_TURN, STOP_TURN, total_packets, just_dropped, this_cwnd_bc)
         cwnds.append(this_cwnd)
         cwnds_bc.append(this_cwnd_bc)
@@ -193,15 +186,15 @@ def q_listen(pkt_q, local_port, rtt, fname):
         if (turn < 1 or this_cwnd_bc > 0.9): turn += 1
 
         # ignore packets that might have gotten interwoven this RTT
-        if purge_queue:
-            try:
-                while True:
-                    next_pkt = pkt_q.get_nowait()
-                    if next_pkt[TCP].dport != local_port: continue
-                    pkts.append(next_pkt)
-                    acks_to_send += 1
-            except queue.Empty:
-                pass
+        # if purge_queue:
+        #     try:
+        #         while True:
+        #             next_pkt = pkt_q.get_nowait()
+        #             if next_pkt[TCP].dport != local_port: continue
+        #             pkts.append(next_pkt)
+        #             acks_to_send += 1
+        #     except queue.Empty:
+        #         pass
 
         # Window Emptying
         if len(acks) > 0: send(acks)
