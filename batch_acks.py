@@ -119,7 +119,7 @@ def q_listen(pkt_q, local_port, rtt, fname):
 
             if pkt is not None and not just_dropped:
                 (_, new_max_ack) = pkt
-                if turn > 1 and new_max_ack > max_ack + MAX_ACK_GAP:
+                if has_dropped and new_max_ack > max_ack + MAX_ACK_GAP:
                     print(pkt)
                     pkt[0][TCP].ack = max_ack
                     pkt = (pkt[0], max_ack) 
@@ -190,7 +190,7 @@ def q_listen(pkt_q, local_port, rtt, fname):
         else:
             cwnds_p3.append(this_cwnd_bc)
 
-        if (turn < 2 or this_cwnd_bc > 0.9): turn += 1
+        if (turn < 1 or this_cwnd_bc > 0.9): turn += 1
 
         # ignore packets that might have gotten interwoven this RTT
         if purge_queue:

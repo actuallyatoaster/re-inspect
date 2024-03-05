@@ -58,8 +58,8 @@ if __name__ == "__main__":
 		site_url = site_obj
 		req_obj = '/'
 
-	server = "128.105.145.32"
-	reqstr = f"GET /testfiles/100MBfile.txt HTTP/1.1\r\nHost: {server}\r\nConnection: Close\r\n\r\n"
+	server = "128.105.145.197"
+	reqstr = f"GET /testfiles/100MBfile.txt HTTP/1.1\r\nHost: 128.105.145.197\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36\r\nConnection: Close\r\n\r\n"
 
 	start_tcpdump("wlo1", "test-tls.pcap", server)
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 	sniff_proc = mp.Process(target=sniff, kwargs = {"prn": lambda pkt: pkt_q.put_nowait(pkt), "filter": f"src host {server}"})
 	sniff_proc.start()
 
-	conn = TLSClientAutomaton.tlslink(Raw, server=server, dport=443)
+	conn = TLSClientAutomaton.tlslink(Raw, server=server, dport=443, version="tls13")
 	# print(conn.atmt.__dir__())
 	while not conn.atmt.__IG_HANDSHAKE_DONE__: pass
 	
