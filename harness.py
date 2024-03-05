@@ -23,7 +23,7 @@ def set_cca(cca, ip_str, username):
 
 # Start taking a trace for this run
 def start_tcpdump(interface, trace_name):
-    p = subprocess.Popen(["tcpdump", "-i", interface, "port", "80", "-w", trace_name])
+    p = subprocess.Popen(["tcpdump", "-i", interface, "port", "443", "-w", trace_name])
     return p
 
 # Reset firewall rule and sleep for a few seconds so OS (hopefully) sends RST packet for previous connections
