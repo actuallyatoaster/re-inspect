@@ -72,7 +72,7 @@ def q_listen(pkt_q, local_port, rtt, fname):
 
     max_ack = 0  # TODO
     has_dropped = False
-    just_dropped = False
+    just_dropped = True
 
     frto_ack = None
 
@@ -81,14 +81,18 @@ def q_listen(pkt_q, local_port, rtt, fname):
     STOP_TURN = 100000000
 
     MAX_STOP_TURN = 40
+    saved_rtt = rtt
+    rtt = 0.1
 
     total_packets = 0
 
     while (turn < STOP_TURN or total_packets < 4000) and turn < MAX_STOP_TURN:
         purge_queue = False
+        if (turn > 0 and rtt > 0.1): print("sleeping:", rtt)
         if (turn > 0): time.sleep(rtt)
+        
         max_ack_turn_start = max_ack
-        print("======== Begin RTT===========")
+        if rtt > 0.1: print("======== Begin RTT===========")
         pkts = []
         acks_to_send = 0
         try:
@@ -100,6 +104,14 @@ def q_listen(pkt_q, local_port, rtt, fname):
                 acks_to_send += 1
         except queue.Empty:
             pass
+
+        if (just_dropped):
+            if acks_to_send > 0:
+                just_dropped = False
+                rtt = saved_rtt 
+                time.sleep(rtt - 0.25)
+            else:
+                continue
 
         this_cwnd =  0
         this_cwnd_bc = 0.0
@@ -127,14 +139,15 @@ def q_listen(pkt_q, local_port, rtt, fname):
            
             pkt = make_ack_for_pkt(pkt, max_ack)
 
-            if pkt is not None and not just_dropped:
+            if pkt is not None:
                 (_, new_max_ack) = pkt
                 if has_dropped and new_max_ack > max_ack + MAX_ACK_GAP:
-                    if len(acks) < 2:
-                        print(pkt)
+                    if len(acks) < 10:
+                        # print(pkt)
                         pkt[0][TCP].ack = max_ack
                         pkt = (pkt[0], max_ack) 
                     else:
+                        # print("DROPPING")
                         pkt = None
         
             if pkt is not None:
@@ -158,17 +171,18 @@ def q_listen(pkt_q, local_port, rtt, fname):
             # max_ack = max_ack_turn_start #TODO: testme
             max_ack = min_ack[TCP].ack
             has_dropped = True
-            # just_dropped = True
+            just_dropped = True
+            rtt = 0.01
             INFLATE_TURN = turn + 10
             STOP_TURN = INFLATE_TURN + 8
 
-            fake_ack1 = IP(dst=DST_IP) / TCP(dport=443, sport=SRC_PORT,
-                 seq=SEQ, ack=max_ack, flags='A')
+            # fake_ack1 = IP(dst=DST_IP) / TCP(dport=443, sport=SRC_PORT,
+            #      seq=SEQ, ack=max_ack, flags='A')
             
-            fake_ack2 = IP(dst=DST_IP) / TCP(dport=443, sport=SRC_PORT,
-                 seq=SEQ, ack=max_ack, flags='A')
+            # fake_ack2 = IP(dst=DST_IP) / TCP(dport=443, sport=SRC_PORT,
+            #      seq=SEQ, ack=max_ack, flags='A')
             
-            acks = [fake_ack1, fake_ack2]
+            # acks = [fake_ack1, fake_ack2]
          
 
         if turn >= INFLATE_TURN: rtt += INFLATE_BY

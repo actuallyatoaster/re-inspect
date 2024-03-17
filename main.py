@@ -40,7 +40,7 @@ if __name__ == "__main__":
 		sys.exit(2)
 
 
-	RTT = 0.7
+	RTT = 0.6
 	MSS = 200
 	LOSS_CW = 128
 
@@ -58,6 +58,8 @@ if __name__ == "__main__":
 		site_url = site_obj
 		req_obj = '/'
 
+	# server = "128.105.145.220"
+	# reqstr = f"GET /testfiles/100MBfile.txt HTTP/1.1\r\nHost: 128.105.145.220\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36\r\nConnection: Close\r\n\r\n"
 	server = "146.75.29.164"
 	reqstr = f"GET / HTTP/1.1\r\nHost: cooking.nytimes.com\r\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36\r\nConnection: Close\r\n\r\n"
 
